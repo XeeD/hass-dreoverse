@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pydreo.client import DreoClient
 from pydreo.exceptions import DreoBusinessException, DreoException
 
 from .const import DreoEntityConfigSpec
 from .coordinator import DreoDataUpdateCoordinator
+from .rgbic import RGBICClient, RGBICError
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -75,6 +77,16 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: DreoConfigEntry) 
 
     for device in devices:
         await async_setup_device_coordinator(hass, client, device, coordinators)
+        if device.get("model") == "DR-HCF002S" and device.get("deviceSn") in coordinators:
+            rgbic = RGBICClient(async_get_clientsession(hass), username, password,
+                                device["deviceSn"])
+            try:
+                if await rgbic.initialize():
+                    coordinator = coordinators[device["deviceSn"]]
+                    coordinator.rgbic_client = rgbic
+                    await coordinator.async_refresh()
+            except RGBICError as error:
+                raise ConfigEntryNotReady("RGBIC capability could not be verified") from error
 
     config_entry.runtime_data = DreoData(client, devices, coordinators)
 
