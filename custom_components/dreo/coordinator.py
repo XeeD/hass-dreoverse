@@ -10,6 +10,7 @@ from homeassistant.components.climate import HVACMode
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util.percentage import ranged_value_to_percentage
 from pydreo.exceptions import DreoException
+
 from .rgbic import RGBICError
 
 if TYPE_CHECKING:
@@ -1136,7 +1137,9 @@ class DreoDataUpdateCoordinator(DataUpdateCoordinator[DreoDeviceData | None]):
                 _raise_no_processor()
 
             data = self.data_processor(state, self.model_config)
-            if self.rgbic_client is not None and isinstance(data, DreoCeilingFanDeviceData):
+            if self.rgbic_client is not None and isinstance(
+                data, DreoCeilingFanDeviceData
+            ):
                 try:
                     rgbic = await self.rgbic_client.read()
                     data.rgb_state = rgbic["on"]
@@ -1144,12 +1147,12 @@ class DreoDataUpdateCoordinator(DataUpdateCoordinator[DreoDeviceData | None]):
                     data.rgb_mode = rgbic["effect"]
                     data.rgb_color = rgbic["color"]
                 except RGBICError:
-                    # Preserve fan/main availability; do not reuse incorrect Open API RGB values.
+                    # Keep fan/main available without incorrect Open API RGB values.
                     data.rgb_state = None
                     data.rgb_brightness = None
                     data.rgb_mode = None
                     data.rgb_color = None
-            return data
+            return data  # noqa: TRY300 - retain existing coordinator control flow
         except DreoException as error:
             message = f"Error communicating with Dreo API: {error}"
             raise UpdateFailed(message) from error

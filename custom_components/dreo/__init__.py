@@ -77,9 +77,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: DreoConfigEntry) 
 
     for device in devices:
         await async_setup_device_coordinator(hass, client, device, coordinators)
-        if device.get("model") == "DR-HCF002S" and device.get("deviceSn") in coordinators:
-            rgbic = RGBICClient(async_get_clientsession(hass), username, password,
-                                device["deviceSn"])
+        if (
+            device.get("model") == "DR-HCF002S"
+            and device.get("deviceSn") in coordinators
+        ):
+            rgbic = RGBICClient(
+                async_get_clientsession(hass), username, password, device["deviceSn"]
+            )
             # Exact-model RGB never falls back to incompatible Open API commands,
             # including when mobile login or capability qualification is unavailable.
             coordinator = coordinators[device["deviceSn"]]
@@ -87,7 +91,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: DreoConfigEntry) 
             try:
                 await rgbic.initialize()
             except RGBICError:
-                _LOGGER.warning("RGBIC capability unavailable; fan/main remain available")
+                _LOGGER.warning(
+                    "RGBIC capability unavailable; fan/main remain available"
+                )
             await coordinator.async_refresh()
 
     config_entry.runtime_data = DreoData(client, devices, coordinators)
