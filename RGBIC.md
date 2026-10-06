@@ -4,7 +4,10 @@ This fork preserves the official `dreo` domain, existing config-entry data,
 device identifiers and entity unique IDs. Fan and main-light control continue
 through the official Open API. The existing RGB light uses the mobile API only
 when the exact DR-HCF002S device reports RGBIC capability and its effect catalog
-contains Constant. Other models retain their existing behavior.
+contains Constant. Exact-model mobile initialization or capability failure leaves
+only RGB unavailable; it never enables legacy RGB commands or prevents fan/main
+setup. Reload the integration to requalify a failed mobile initialization.
+Other models retain their existing behavior.
 
 The existing config flow stores the API's MD5 password credential; mobile
 authentication uses those bytes without hashing again. Home Assistant's maintained

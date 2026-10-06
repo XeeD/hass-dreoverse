@@ -142,6 +142,8 @@ class RGBICClient:
         return state.get("mixed", {}), catalog
 
     async def read(self):
+        if not self.enabled:
+            raise RGBICError("RGBIC capability unavailable")
         state, catalog = await self._read_raw()
         effect, color = observed_effect(catalog, mixed_value(state, "rgbeffectid"))
         return {"on": mixed_value(state, "atmon"), "brightness": mixed_value(state, "atmbri"),

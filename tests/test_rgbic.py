@@ -65,6 +65,16 @@ class NativeTests(unittest.IsolatedAsyncioTestCase):
         c._read_raw=AsyncMock(return_value=({"atmon":{"state":True}}, {"basicEffects":[effect()]}))
         self.assertFalse(await c.initialize())
 
+    async def test_reported_rgbic_without_constant_remains_unqualified(self):
+        c=self.client(); c.enabled=False
+        c._request=AsyncMock(side_effect=[{"region":"NA","access_token":"fixture-token"},
+                                        {"list":[{"sn":"fixture-serial","model":"DR-HCF002S"}]}])
+        c._read_raw=AsyncMock(return_value=({"atmon":{"state":True},"rgbeffectid":{"state":"fixture-chase"}}, {"basicEffects":[effect("Chase", "fixture-chase")]}))
+        self.assertFalse(await c.initialize())
+        c._power_brightness=AsyncMock()
+        with self.assertRaises(rgbic.RGBICError): await c.command(brightness=40)
+        c._power_brightness.assert_not_awaited()
+
     async def test_actual_catalog_and_mobile_state_enable_model(self):
         c=self.client()
         c._request=AsyncMock(side_effect=[{"region":"NA","access_token":"fixture-token"},
